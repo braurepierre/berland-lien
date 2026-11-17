@@ -38,7 +38,13 @@ async function lire(url, type) {
   return type === 'json' ? reponse.json() : reponse.text();
 }
 
-(async () => {
+// Mode « raccourci » (?raccourci) : pas de redirection, l'adresse affichée redevient l'adresse fixe, pour
+// que « Ajouter à l'écran d'accueil » crée un raccourci vers cette page et non vers l'adresse du jour.
+if (new URLSearchParams(location.search).has('raccourci')) {
+  history.replaceState(null, '', location.pathname);
+  document.getElementById('etat').textContent = "Ajoutez cette page à l'écran d'accueil : menu ⋮, puis « Ajouter à l'écran d'accueil ».";
+  document.getElementById('detail').textContent = 'Le raccourci ouvrira toujours le site, même quand son adresse change.';
+} else (async () => {
   for (const source of SOURCES) {
     try {
       const adresse = String(await source()).trim();
