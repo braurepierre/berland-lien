@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Visites</title>
+<style>
+  :root { color-scheme: light dark; --fond: #f6f6f4; --texte: #1d1d1b; --doux: #6b6b66; --lien: #0b5cad; }
+  @media (prefers-color-scheme: dark) { :root { --fond: #1b1b1a; --texte: #ececea; --doux: #a3a39e; --lien: #7db3ec; } }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--fond); color: var(--texte);
+         font: 17px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 26rem; padding: 0 16px; text-align: center; }
+  p { margin: .5rem 0; }
+  .doux { color: var(--doux); font-size: .9rem; }
+  a { color: var(--lien); }
+</style>
+</head>
+<body>
+<main>
+  <p id="etat">Recherche de l'adresse du site…</p>
+  <p class="doux" id="detail"></p>
+</main>
+<script>
+// Relais de la décision 0008 : le gist ne contient qu'une ligne, l'adresse du tunnel. Aucune donnée ici.
+// L'API de GitHub est à jour tout de suite ; le fichier brut sert de secours (cache de 5 minutes).
+const GIST = '2a9f51e25ecb702ec53ea0b4c6b9b127';
+const SOURCES = [
+  async () => (await lire(`https://api.github.com/gists/${GIST}`, 'json')).files['adresse.txt'].content,
+  async () => lire(`https://gist.githubusercontent.com/braurepierre/${GIST}/raw/adresse.txt`, 'text'),
+];
+const FORME = /^https:\/\/[a-z0-9-]+\.trycloudflare\.com\/?$/;
+
+async function lire(url, type) {
+  const reponse = await fetch(url, { cache: 'no-store' });
+  if (!reponse.ok) throw new Error(String(reponse.status));
+  return type === 'json' ? reponse.json() : reponse.text();
+}
+
+(async () => {
+  for (const source of SOURCES) {
+    try {
+      const adresse = String(await source()).trim();
+      if (FORME.test(adresse)) { location.replace(adresse); return; }
+    } catch { /* source suivante */ }
+  }
+  document.getElementById('etat').textContent = "Le site est injoignable pour l'instant.";
+  document.getElementById('detail').textContent =
+    "Le PC du bureau est peut-être éteint, ou le tunnel en cours de relance. Réessayer dans quelques minutes.";
+})();
+</script>
+</body>
+</html>
